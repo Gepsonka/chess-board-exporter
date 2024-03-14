@@ -1,4 +1,4 @@
-from FEN import (
+from utils.FEN import (
     getBoard,
     getExclusions,
     getRandomPosition,
