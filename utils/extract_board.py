@@ -6,7 +6,7 @@ class ExtractChessBoard(object):
         self.show_process = show_process
         self._load_image(image_path)
         self._load_board_template()
-        self.extract_board_alternative()
+        self.extract_board()
 
     def _load_image(self, path):
         self.screenshot = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
@@ -20,13 +20,9 @@ class ExtractChessBoard(object):
         if self.template is None:
             raise FileNotFoundError("Template not found")
 
-    def extract_board(self):
+    def extract_board(self, extracted_board_size=(200, 200)):
         ret, thresholded_screenshot = cv2.threshold(
             self.screenshot, 120, 255, cv2.THRESH_BINARY
-        )
-
-        ret, thresholded_template = cv2.threshold(
-            self.template, 120, 255, cv2.THRESH_BINARY
         )
 
         if self.show_process:
@@ -35,58 +31,41 @@ class ExtractChessBoard(object):
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
-            cv2.imshow("thresholded template", thresholded_template)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-
-        res = cv2.matchTemplate(
-            thresholded_screenshot, thresholded_template, cv2.TM_CCOEFF_NORMED
-        )
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-        top_left = max_loc
-        w, h = self.template.shape[::-1]
-        top_left = max_loc
-
-        # Draw rectangle around the chessboard (optional)
-        end_right = top_left[0] + w
-        end_bottom = top_left[1] + h
-        cv2.rectangle(
-            self.screenshot, top_left, (end_right, end_bottom), (0, 255, 0), 2
+        contours, hierarchy = cv2.findContours(
+            thresholded_screenshot, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # # cut board out of screenshot
-        # self.board_cut = self.screenshot[
-        #     top_left[1] : bottom_right[1], top_left[0] : bottom_right[0]
-        # ]
+        biggest_area = 0
+        biggest_cnt = None
 
-        # display the screenshot with rectangle
-        cv2.imshow("screenshot", self.screenshot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        for cnt in contours:
+            # Check if the contour is a rectangle (has 4 corners)
+            if len(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)) == 4:
+                area = cv2.contourArea(cnt)
+                if area > biggest_area:
+                    biggest_area = area
+                    biggest_cnt = cnt
 
-        return self.board_cut
+        # Extract coordinates of the biggest rectangle (if found)
+        if biggest_cnt is not None:
+            x, y, w, h = cv2.boundingRect(biggest_cnt)
+            cv2.rectangle(self.screenshot, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
-    def extract_board_alternative(self):
-        # thresholded_screenshot = cv2.adaptiveThreshold(
-        #     self.screenshot,
-        #     255,
-        #     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        #     cv2.THRESH_BINARY,
-        #     11,
-        #     2,
-        # )
+            if self.show_process:
+                # display the screenshot with the rectangle
+                cv2.imshow("screenshot with rectangle", self.screenshot)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
 
-        # if self.show_process:
-        #     cv2.imshow("thresholded screenshot", thresholded_screenshot)
-        #     cv2.waitKey(0)
-        #     cv2.destroyAllWindows()
+            # Extract the board from the screenshot
+            self.board = self.screenshot[y : y + h, x : x + w]
+            if self.show_process:
+                # display the extracted board
+                cv2.imshow("extracted board", self.board)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
 
-        ret, corners = cv2.findChessboardCorners(self.screenshot, (8, 8), None)
-        if ret:
-            cv2.drawChessboardCorners(self.screenshot, (8, 8), corners, ret)
-            cv2.imshow("screenshot", self.screenshot)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            self.board = cv2.resize(self.board, extracted_board_size)
+            return self.board
         else:
-            print("Chessboard not found")
-            return None
+            raise Exception("No rectangle found")
