@@ -2,14 +2,17 @@ import cv2
 
 
 class ExtractChessBoard(object):
-    def __init__(self, image_path, show_process=True) -> None:
+    def __init__(self, image_path="", image_obj=None, show_process=True) -> None:
         self.show_process = show_process
-        self._load_image(image_path)
+        self._load_image(image_path, image_obj)
 
-    def _load_image(self, path):
-        self.screenshot = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-        if self.screenshot is None:
-            raise FileNotFoundError("Image not found")
+    def _load_image(self, path, image_obj=None):
+        if image_obj is not None:
+            self.screenshot = image_obj
+        else:
+            self.screenshot = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if self.screenshot is None:
+                raise FileNotFoundError("Image not found")
 
     def extract_board(self, extracted_board_size=(200, 200)):
         ret, thresholded_screenshot = cv2.threshold(
