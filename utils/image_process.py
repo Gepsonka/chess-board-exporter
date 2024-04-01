@@ -41,10 +41,26 @@ class ImageProcess(object):
             template[template_mask] = [255, 255, 255, 255]
 
             template = cv2.cvtColor(template, cv2.COLOR_BGRA2GRAY)
+
             template = cv2.resize(
                 template,
                 (self.square_size, self.square_size),
             )
+
+            mask = cv2.inRange(template, 254, 255)
+            mask = cv2.bitwise_not(mask)
+
+            cnt, _ = cv2.findContours(
+                mask,
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE,
+            )
+
+            if cnt:
+                cnt = max(cnt, key=cv2.contourArea)
+                x, y, w, h = cv2.boundingRect(cnt)
+
+                template = template[y : y + h, x : x + w]
 
             self.pieces[piece_path.split(".")[0]] = {
                 "template": template,
@@ -91,7 +107,10 @@ class ImageProcess(object):
                 max_loc[1] + piece_obj["template"].shape[0],
             )
 
-            if max_val > 0.9 and max_val > biggest_score["score"]:
+            # display_image(square, "square")
+            # display_image(piece_obj["template"], "template")
+
+            if max_val > 0.905 and max_val > biggest_score["score"]:
                 biggest_score["piece"] = piece_name
                 biggest_score["score"] = max_val
 
