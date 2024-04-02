@@ -13,7 +13,8 @@ from utils.extract_board import ExtractChessBoard
 class ImageProcess(object):
     TEMPLATE_SCALES = [1]
 
-    def __init__(self, image_path, show_process=False):
+    def __init__(self, image_path, show_process=True):
+        self.show_process = show_process
         self._load_board_image(image_path)
         self._extract_board()
         self._slice_board_by_blocks()
@@ -21,9 +22,6 @@ class ImageProcess(object):
 
     def _load_board_image(self, path):
         self.board_image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-        self.board_image = cv2.threshold(self.board_image, 90, 255, cv2.THRESH_BINARY)[
-            1
-        ]
 
     def convert_alpha_to_white(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
@@ -69,6 +67,8 @@ class ImageProcess(object):
 
     def _extract_board(self):
         self.board_image = ExtractChessBoard(image_obj=self.board_image).extract_board()
+        if self.show_process:
+            display_image(self.board_image, "Extracted boaaard gray")
 
     def _slice_board_by_blocks(self):
         self.square_size = self.board_image.shape[0] // 8
@@ -110,7 +110,7 @@ class ImageProcess(object):
             # display_image(square, "square")
             # display_image(piece_obj["template"], "template")
 
-            if max_val > 0.906 and max_val > biggest_score["score"]:
+            if max_val > 0.91 and max_val > biggest_score["score"]:
                 biggest_score["piece"] = piece_name
                 biggest_score["score"] = max_val
 

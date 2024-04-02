@@ -1,9 +1,14 @@
 import cv2
 
+from utils.display_image import display_image
+
 
 class ExtractChessBoard(object):
-    def __init__(self, image_path="", image_obj=None, show_process=True) -> None:
+    def __init__(
+        self, image_path="", image_obj=None, show_process=True, threshold_value=90
+    ) -> None:
         self.show_process = show_process
+        self.threshold_value = threshold_value
         self._load_image(image_path, image_obj)
 
     def _load_image(self, path, image_obj=None):
@@ -14,9 +19,11 @@ class ExtractChessBoard(object):
             if self.screenshot is None:
                 raise FileNotFoundError("Image not found")
 
+        self.original_image = self.screenshot
+
     def extract_board(self, extracted_board_size=(200, 200)):
         ret, thresholded_screenshot = cv2.threshold(
-            self.screenshot, 120, 255, cv2.THRESH_BINARY
+            self.screenshot, self.threshold_value, 255, cv2.THRESH_BINARY
         )
 
         if self.show_process:
@@ -47,7 +54,7 @@ class ExtractChessBoard(object):
 
             if self.show_process:
                 # display the screenshot with the rectangle
-                cv2.imshow("screenshot with rectangle", self.screenshot)
+                cv2.imshow("screenshot with rectangle", self.original_image)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
 
@@ -58,6 +65,13 @@ class ExtractChessBoard(object):
                 cv2.imshow("extracted board", self.board)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
+
+            self.board = cv2.threshold(
+                self.board, self.threshold_value, 255, cv2.THRESH_BINARY
+            )[1]
+
+            if self.show_process:
+                display_image(self.board, "thresholded extracted board")
 
             self.board = cv2.resize(self.board, extracted_board_size)
             return self.board
