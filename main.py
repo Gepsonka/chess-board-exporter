@@ -1,13 +1,20 @@
-import os
-import cv2
-import numpy as np
-
+import argparse
 from utils.extract_board import ExtractChessBoard
 from utils.image_process import ImageProcess
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--path", type=str, help="Path to the screenshot")
+parser.add_argument(
+    "--show-process", type=bool, help="Show the process of extracting the chess board"
+)
 
-extract_board = ImageProcess("screenshots/jlk.png").template_match()
+args = parser.parse_args()
 
-# image_proc = ImageProcess(
-#     "data/1B1b1K2_2PP1p1b_1k1NP1pp_q2BpN1Q_P4Pp1_P3pn2_pPP1r1p1_nr2R2R w - - 0 1.png"
-# )
+if args.path is None:
+    path = "screenshots/asd.png"
+else:
+    path = args.path
+
+proc = ImageProcess(
+    path,
+).template_match()
