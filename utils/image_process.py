@@ -110,7 +110,7 @@ class ImageProcess(object):
             # display_image(square, "square")
             # display_image(piece_obj["template"], "template")
 
-            if max_val > 0.91 and max_val > biggest_score["score"]:
+            if max_val > 0.905 and max_val > biggest_score["score"]:
                 biggest_score["piece"] = piece_name
                 biggest_score["score"] = max_val
 
