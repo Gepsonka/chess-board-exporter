@@ -2,12 +2,10 @@ import os
 import cv2
 import numpy as np
 
+from utils.convert_representation_to_fen import ConvertRespresentationToFEN
 from utils.display_image import display_image
 from utils.constants import EDGE_WIDTH, SQUARE_SIZE
 from utils.extract_board import ExtractChessBoard
-
-# Edge width = 15px
-# Block size = 45px
 
 
 class ImageProcess(object):
@@ -40,6 +38,13 @@ class ImageProcess(object):
 
             template = cv2.cvtColor(template, cv2.COLOR_BGRA2GRAY)
 
+            template = cv2.threshold(
+                template,
+                200,
+                255,
+                cv2.THRESH_BINARY,
+            )[1]
+
             template = cv2.resize(
                 template,
                 (self.square_size, self.square_size),
@@ -66,7 +71,9 @@ class ImageProcess(object):
             }
 
     def _extract_board(self):
-        self.board_image = ExtractChessBoard(image_obj=self.board_image).extract_board()
+        self.board_image = ExtractChessBoard(
+            image_obj=self.board_image, show_process=self.show_process
+        ).extract_board()
         if self.show_process:
             display_image(self.board_image, "Extracted boaaard gray")
 
@@ -89,10 +96,14 @@ class ImageProcess(object):
             piece = self._template_match_square(square)
             self.board_representation.append(piece)
 
+        self.representation = ConvertRespresentationToFEN(self.board_representation)
+
         print(self.board_representation)
 
     def _template_match_square(self, square):
         biggest_score = {"piece": None, "score": 0}
+        if self.show_process:
+            display_image(square, "square")
         for piece_name, piece_obj in self.pieces.items():
             res = cv2.matchTemplate(
                 square,

@@ -15,6 +15,12 @@ if args.path is None:
 else:
     path = args.path
 
+if args.show_process is None:
+    show_process = False
+else:
+    show_process = args.show_process
+
 proc = ImageProcess(
     path,
+    show_process=show_process,
 ).template_match()
